@@ -43,16 +43,14 @@ yajl_val yajl_tree_get(yajl_val n, const char ** path, yajl_type type) {
     return n;
 }
 
-size_t write_data( void *ptr, size_t size, size_t nmeb, void *stream) {
- return fwrite(ptr,size,nmeb,stream);
-}
  
+// It's a struct bro
 struct MemoryStruct {
   char *memory;
   size_t size;
 };
  
- 
+// Write memory callback for libcurl
 static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp) {
   size_t realsize = size * nmemb;
   struct MemoryStruct *mem = (struct MemoryStruct *)userp;
@@ -71,6 +69,7 @@ static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, voi
   return realsize;
 }
 
+// This is our main function... yeah!
 int main(int argc, char *argv[]) {
 
 	sqlite3 *database;
