@@ -1,11 +1,30 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <curses.h>
 #include <sqlite3.h>
 #include <curl/curl.h>
 
 #include <yajl/yajl_tree.h>
+
+int current_window_row,
+    current_window_column,
+    window_rows,
+    window_columns;
+
+void draw(char character_to_draw) { 
+	move(current_window_row, current_window_column); // curses call to move cursor to row r, column c
+	delch(); insch(character_to_draw); // curses calls to replace character under cursor by dc
+	refresh(); // curses call to update screen
+	current_window_row++; // go to next row
+	// check for need to shift right or wrap around
+	if (current_window_row == window_rows) {
+		current_window_row = 0;
+		current_window_column++;
+		if (current_window_column == window_columns) current_window_column = 0;
+	}
+}
+
 
 // Not quite sure why we need a callback here
 static int callback(void *NotUsed, int argc, char **argv, char **azColName){
@@ -85,6 +104,27 @@ int main(int argc, char *argv[]) {
 	struct MemoryStruct http_response;
 	http_response.memory = malloc(1);
 	http_response.size = 0;
+
+	// Curses
+	char typed_character;
+	WINDOW *window;
+
+	window = initscr(); // curses call to initialize window
+	cbreak();           // curses call to set no waiting for Enter key
+	noecho();           // curses call to set no echoing
+	getmaxyx(window, window_rows, window_columns); // curses call to find size of window
+	clear();            // curses call to clear screen, send cursor to position (0,0)
+	refresh();          // curses call to implement all changes since last refresh
+
+	current_window_row = 0; 
+	current_window_column = 0;
+	while (1) {
+		typed_character = getch(); // curses call to input from keyboard
+		if (typed_character == 'q') break; // quit?
+		draw(typed_character); // draw the character
+	}
+
+	endwin();
 
 	// Example of handling web requests
 	http_handle = curl_easy_init();
