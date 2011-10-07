@@ -107,6 +107,22 @@ int main(int argc, char *argv[]) {
 	http_response.memory = malloc(1);
 	http_response.size = 0;
 
+	// Setting up curses
+	char typed_character;
+	WINDOW *window;
+
+	window = initscr(); // curses call to initialize window
+	cbreak();           // curses call to set no waiting for Enter key
+	noecho();           // curses call to set no echoing
+	getmaxyx(window, window_rows, window_columns); // curses call to find size of window
+	clear();            // curses call to clear screen, send cursor to position (0,0)
+	refresh();          // curses call to implement all changes since last refresh		
+
+	start_color();
+	bool x = has_colors();
+	init_pair(1,  COLOR_WHITE, COLOR_BLACK);
+	init_pair(2,  COLOR_BLACK, COLOR_WHITE);
+
 	// Example of handling web requests
 	http_handle = curl_easy_init();
 	if (http_handle) {
@@ -144,47 +160,34 @@ int main(int argc, char *argv[]) {
 
 		if (json_values) {
 
+			color_set(2, NULL);
+			mvprintw(0, 0, "%-100s", "*   #      TITLE"); 
+			color_set(1, NULL);
+
 			number_of_tickets = (int)json_values->u.array.len;
 			int i;
 			for (i = 0; i < number_of_tickets; i++) {
 				int j;
 				for (j = 0; j < (int)json_values->u.array.values[i]->u.object.len; j++) {
-					if (strcmp("title", json_values->u.array.values[i]->u.object.keys[j]) == 0) {
-						printf("%s\n", YAJL_GET_STRING(json_values->u.array.values[i]->u.object.values[j]));
+					if (strcmp("number", json_values->u.array.values[i]->u.object.keys[j]) == 0) {
+						mvprintw(i+1, 0, "GH");
+						mvprintw(i+1, 4, "%i", YAJL_GET_INTEGER(json_values->u.array.values[i]->u.object.values[j]));
+					} else if (strcmp("title", json_values->u.array.values[i]->u.object.keys[j]) == 0) {
+						mvprintw(i+1, 11, YAJL_GET_STRING(json_values->u.array.values[i]->u.object.values[j]));
 					}
 				};
 			};
 
-		} else {
-			printf("no such node: %s/%s\n", json_search_path[0], json_search_path[1]);
 		}
 
 	}
 
 	yajl_tree_free(json_node);
 
-	/*
-	// Curses
-	char typed_character;
-	WINDOW *window;
+	// Main curses loop
+	while ( getch() != 'q' ) {}
 
-	window = initscr(); // curses call to initialize window
-	cbreak();           // curses call to set no waiting for Enter key
-	noecho();           // curses call to set no echoing
-	getmaxyx(window, window_rows, window_columns); // curses call to find size of window
-	clear();            // curses call to clear screen, send cursor to position (0,0)
-	refresh();          // curses call to implement all changes since last refresh
-
-	current_window_row = 0; 
-	current_window_column = 0;
-	while (1) {
-		typed_character = getch(); // curses call to input from keyboard
-		if (typed_character == 'q') {
-			break; // quit?
-		}
-	}
-
-	endwin(); */
+	endwin();
 
 /*
 	// Example accessing a database
