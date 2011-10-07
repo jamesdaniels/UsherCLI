@@ -3,9 +3,11 @@
 #include <string.h>
 
 #include <sqlite3.h>
+#include <curl/curl.h>
 
 #include <yajl/yajl_tree.h>
 
+// Not quite sure why we need a callback here
 static int callback(void *NotUsed, int argc, char **argv, char **azColName){
 	NotUsed=0;
 	int i;
@@ -41,6 +43,34 @@ yajl_val yajl_tree_get(yajl_val n, const char ** path, yajl_type type) {
     return n;
 }
 
+size_t write_data( void *ptr, size_t size, size_t nmeb, void *stream) {
+ return fwrite(ptr,size,nmeb,stream);
+}
+ 
+struct MemoryStruct {
+  char *memory;
+  size_t size;
+};
+ 
+ 
+static size_t WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp) {
+  size_t realsize = size * nmemb;
+  struct MemoryStruct *mem = (struct MemoryStruct *)userp;
+ 
+  mem->memory = realloc(mem->memory, mem->size + realsize + 1);
+  if (mem->memory == NULL) {
+    /* out of memory! */ 
+    printf("not enough memory (realloc returned NULL)\n");
+    exit(EXIT_FAILURE);
+  }
+ 
+  memcpy(&(mem->memory[mem->size]), contents, realsize);
+  mem->size += realsize;
+  mem->memory[mem->size] = 0;
+ 
+  return realsize;
+}
+
 int main(int argc, char *argv[]) {
 
 	sqlite3 *database;
@@ -51,6 +81,32 @@ int main(int argc, char *argv[]) {
 	char json_error_message[1024];
 	json_error_message[0] = 0;
 
+	char *http_result;
+  CURL *http_handle;
+  CURLcode http_code;
+
+	struct MemoryStruct http_response;
+	http_response.memory = malloc(1);
+	http_response.size = 0;
+
+	// Example of handling web requests
+	http_handle = curl_easy_init();
+	if (http_handle) {
+    curl_easy_setopt(http_handle, CURLOPT_URL, "https://appblade.com/api/me?oauth_token=50667aaf0c73e9684be2c10889a4b26c37f15c97db9e8e5905c6ac03a8859f37");
+		curl_easy_setopt(http_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+		curl_easy_setopt(http_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+		curl_easy_setopt(http_handle, CURLOPT_WRITEDATA, (void *)&http_response);
+    curl_easy_perform(http_handle);
+    curl_easy_cleanup(http_handle);
+  }
+	printf("%lu bytes retrieved\n", (long)http_response.size);
+	printf("%s\n", http_response.memory);
+
+	if (http_response.memory) {
+    free(http_response.memory);
+	}
+
+	// Example of parsing JSON
 	json_node = yajl_tree_parse("{\"A\": \"B\", \"Foo\": {\"bar\": \"a\"}}\0", json_error_message, sizeof(json_error_message));
 	if (json_node == NULL) {
 
@@ -72,7 +128,7 @@ int main(int argc, char *argv[]) {
 		if (json_value) {
 			printf("%s/%s: %s\n", json_search_path[0], json_search_path[1], YAJL_GET_STRING(json_value));
 		} else {
-			printf("no such node: %s/%s\n", json_search_path[0], json_search_path[1]);
+			fprintf(stderr, "no such node: %s/%s\n", json_search_path[0], json_search_path[1]);
 		}
 
 	}
@@ -104,6 +160,7 @@ int main(int argc, char *argv[]) {
 
 */
 
+	// Example accessing a database
 	database_status = sqlite3_open("tickets.db", &database);
 	if (database_status) {
 		printf("Can't open database: %s\n", sqlite3_errmsg(database));
@@ -111,6 +168,7 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
+	// Example writing to a database
 	database_status = sqlite3_exec(database, "create table notes (body text)", callback, 0, &database_error_message);
 	if (database_status != SQLITE_OK) {
 		printf("SQL error: %s\n", database_error_message);
