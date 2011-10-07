@@ -7,6 +7,8 @@
 
 #include <yajl/yajl_tree.h>
 
+#include "credentials.h"
+
 int current_window_row,
     current_window_column,
     window_rows,
@@ -120,7 +122,9 @@ int main(int argc, char *argv[]) {
 	current_window_column = 0;
 	while (1) {
 		typed_character = getch(); // curses call to input from keyboard
-		if (typed_character == 'q') break; // quit?
+		if (typed_character == 'q') {
+			break; // quit?
+		}
 		draw(typed_character); // draw the character
 	}
 
@@ -129,10 +133,12 @@ int main(int argc, char *argv[]) {
 	// Example of handling web requests
 	http_handle = curl_easy_init();
 	if (http_handle) {
-    curl_easy_setopt(http_handle, CURLOPT_URL, "https://appblade.com/api/me?oauth_token=50667aaf0c73e9684be2c10889a4b26c37f15c97db9e8e5905c6ac03a8859f37");
+		curl_easy_setopt(http_handle, CURLOPT_URL, "https://github.com/api/v2/json/issues/list/Raizlabs/AppBlade/open");
 		curl_easy_setopt(http_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
 		curl_easy_setopt(http_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 		curl_easy_setopt(http_handle, CURLOPT_WRITEDATA, (void *)&http_response);
+		curl_easy_setopt(http_handle, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+		curl_easy_setopt(http_handle, CURLOPT_USERPWD, GITHUB_API_CREDENTIALS);
     curl_easy_perform(http_handle);
     curl_easy_cleanup(http_handle);
   }

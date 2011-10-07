@@ -1,3 +1,4 @@
 usher
 usher.dSYM
 *.db
+credentials.h
