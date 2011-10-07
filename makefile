@@ -1,4 +1,4 @@
-CFLAGS=-Wall -g
+CFLAGS=-Wall -g -lsqlite3 -lyajl
 
 clean:
 	rm -f usher
