@@ -161,12 +161,12 @@ int main(int argc, char *argv[]) {
 		if (json_values) {
 
 			color_set(2, NULL);
-			mvprintw(0, 0, "%-100s", "*   #      TITLE"); 
+			mvprintw(0, 0, "%-80s", "*   #      TITLE"); 
 			color_set(1, NULL);
 
 			number_of_tickets = (int)json_values->u.array.len;
 			int i;
-			for (i = 0; i < number_of_tickets; i++) {
+			for (i = 0; i < window_rows-2; i++) {
 				int j;
 				for (j = 0; j < (int)json_values->u.array.values[i]->u.object.len; j++) {
 					if (strcmp("number", json_values->u.array.values[i]->u.object.keys[j]) == 0) {
@@ -177,6 +177,9 @@ int main(int argc, char *argv[]) {
 					}
 				};
 			};
+
+			color_set(2, NULL);
+			mvprintw(window_rows-1, 0, "And %i more...", number_of_tickets-window_rows-2);
 
 		}
 
