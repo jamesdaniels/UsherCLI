@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
 	// Example of handling web requests
 	http_handle = curl_easy_init();
 	if (http_handle) {
-		curl_easy_setopt(http_handle, CURLOPT_URL, "https://github.com/api/v2/json/issues/list/Raizlabs/AppBlade/open");
+		curl_easy_setopt(http_handle, CURLOPT_URL, GITHUB_PROJECT_URL);
 		curl_easy_setopt(http_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
 		curl_easy_setopt(http_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
 		curl_easy_setopt(http_handle, CURLOPT_WRITEDATA, (void *)&http_response);
